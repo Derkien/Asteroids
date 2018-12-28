@@ -8,8 +8,11 @@ namespace Asteroids
         {
             Form Form = new Form
             {
-                Width = 800,
-                Height = 600
+                Width = 1000,
+                Height = 800,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
             };
 
             Game.Init(Form);

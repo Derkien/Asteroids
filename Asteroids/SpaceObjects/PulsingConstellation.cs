@@ -2,8 +2,11 @@
 
 namespace Asteroids.SpaceObjects
 {
-    internal class PulsingConstellation : BaseObject
+    internal class PulsingConstellation : SpaceObject
     {
+        private const int DefaultSizeWidth = 6;
+        private const int DefaultSizeHeight = 6;
+        private const int SmallStarsAspectRatio = 3;
         private static int DrawCounter;
 
         private XStar LeftXStar;
@@ -15,16 +18,28 @@ namespace Asteroids.SpaceObjects
 
         public PulsingConstellation(Point leftTopPosition, Point moveDirection, Size size) : base(leftTopPosition, moveDirection, size)
         {
+            InitConstellationStars(leftTopPosition, moveDirection);
+        }
+
+        public PulsingConstellation(Point leftTopPosition, Point moveDirection) : base(leftTopPosition, moveDirection)
+        {
+            Size = new Size(DefaultSizeWidth, DefaultSizeHeight);
+
+            InitConstellationStars(leftTopPosition, moveDirection);
+        }
+
+        private void InitConstellationStars(Point leftTopPosition, Point moveDirection)
+        {
             DrawCounter = 0;
 
-            CenterXStar = new XStar(leftTopPosition, moveDirection, size);
+            CenterXStar = new XStar(leftTopPosition, moveDirection, Size);
 
-            Size SmallStarSize = new Size(2, 2);
+            Size SmallStarSize = new Size(Size.Width / SmallStarsAspectRatio, Size.Height / SmallStarsAspectRatio);
 
             CenterCrossStar = new CrossStar(
                 new Point(
-                    leftTopPosition.X + size.Width / 2 - SmallStarSize.Width / 2,
-                    leftTopPosition.Y + size.Height / 2 - SmallStarSize.Height / 2
+                    leftTopPosition.X + Size.Width / 2 - SmallStarSize.Width / 2,
+                    leftTopPosition.Y + Size.Height / 2 - SmallStarSize.Height / 2
                 ),
                 moveDirection,
                 SmallStarSize
@@ -32,22 +47,22 @@ namespace Asteroids.SpaceObjects
             LeftXStar = new XStar(
                 new Point(
                     leftTopPosition.X - SmallStarSize.Width - 2,
-                    leftTopPosition.Y + size.Height / 2 - SmallStarSize.Width / 2
+                    leftTopPosition.Y + Size.Height / 2 - SmallStarSize.Width / 2
                 ),
                 moveDirection,
                 SmallStarSize
             );
             RightXStar = new XStar(
                 new Point(
-                    leftTopPosition.X + size.Width + 2,
-                    leftTopPosition.Y + size.Height / 2 - SmallStarSize.Width / 2
+                    leftTopPosition.X + Size.Width + 2,
+                    leftTopPosition.Y + Size.Height / 2 - SmallStarSize.Width / 2
                 ),
                 moveDirection,
                 SmallStarSize
             );
             TopXStar = new XStar(
                 new Point(
-                    leftTopPosition.X + size.Width / 2 - SmallStarSize.Width / 2,
+                    leftTopPosition.X + Size.Width / 2 - SmallStarSize.Width / 2,
                     leftTopPosition.Y - SmallStarSize.Height - 2
                 ),
                 moveDirection,
@@ -55,8 +70,8 @@ namespace Asteroids.SpaceObjects
             );
             BottomXStar = new XStar(
                 new Point(
-                    leftTopPosition.X + size.Width / 2 - SmallStarSize.Width / 2,
-                    leftTopPosition.Y + size.Height + 2
+                    leftTopPosition.X + Size.Width / 2 - SmallStarSize.Width / 2,
+                    leftTopPosition.Y + Size.Height + 2
                 ),
                 moveDirection,
                 SmallStarSize
@@ -116,6 +131,16 @@ namespace Asteroids.SpaceObjects
             {
                 DrawCounter = 0;
             }
+        }
+
+        public override bool IsCollidedWithObject(IColliding obj)
+        {
+            return false;
+        }
+
+        public override void OnCollideWithObject(IColliding obj)
+        {
+            return;
         }
 
         public override void Update()

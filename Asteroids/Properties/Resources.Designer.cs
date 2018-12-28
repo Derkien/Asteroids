@@ -63,9 +63,59 @@ namespace Asteroids.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap VerySmallUfo {
+        internal static System.Drawing.Bitmap BigAsteroid {
             get {
-                object obj = ResourceManager.GetObject("VerySmallUfo", resourceCulture);
+                object obj = ResourceManager.GetObject("BigAsteroid", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap MediumAsteroid {
+            get {
+                object obj = ResourceManager.GetObject("MediumAsteroid", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SmallAsteroid {
+            get {
+                object obj = ResourceManager.GetObject("SmallAsteroid", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SmallPlasmaBullet {
+            get {
+                object obj = ResourceManager.GetObject("SmallPlasmaBullet", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SmallSpaceShip {
+            get {
+                object obj = ResourceManager.GetObject("SmallSpaceShip", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SmallUfo {
+            get {
+                object obj = ResourceManager.GetObject("SmallUfo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
