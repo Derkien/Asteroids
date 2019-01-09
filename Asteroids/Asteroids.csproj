@@ -55,8 +55,10 @@
     <Compile Include="SpaceObjects\Asteroid.cs" />
     <Compile Include="SpaceObjects\BigAsteroid.cs" />
     <Compile Include="SpaceObjects\Bullet.cs" />
+    <Compile Include="SpaceObjects\EnergyPack.cs" />
     <Compile Include="SpaceObjects\MediumAsteroid.cs" />
     <Compile Include="SpaceObjects\SmallAsteroid.cs" />
+    <Compile Include="SpaceObjects\SmallEnergyPack.cs" />
     <Compile Include="SpaceObjects\SpaceObject.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Program.cs" />
@@ -90,6 +92,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\SmallAsteroid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallEnergy.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

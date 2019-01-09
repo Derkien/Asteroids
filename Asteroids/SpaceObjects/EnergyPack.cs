@@ -2,51 +2,42 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace Asteroids.SpaceObjects
 {
-    internal abstract class Asteroid : SpaceObject
+    internal abstract class EnergyPack : SpaceObject
     {
-        protected Image AsteroidImage;
+        private const int EnergyRefreshInterval = 20000;
+
+        protected Image EnergyPackImage;
         protected Random Random;
 
-        public Asteroid(Point leftTopPosition) : base(leftTopPosition)
+        protected EnergyPack(Point leftTopPosition) : base(leftTopPosition)
         {
             if (LeftTopPosition.X < 0 || LeftTopPosition.Y < 0 || LeftTopPosition.X < Game.Width / 2 || LeftTopPosition.Y > Game.Height)
             {
-                throw new InvalidSpaceObjectException("Initial position of asteroid can't be in the middle of screen or out of top or bottom of screen");
+                throw new InvalidSpaceObjectException("Initial position of energy can't be in the middle of screen or out of top or bottom of screen");
             }
 
             Random = new Random();
 
+            EnergyPackImage = GetEnergyPackImage();
             MoveDirection = GetMoveDirection();
-            AsteroidImage = GetAsteroidImage();
-            Health = GetAsteroidMaxHealth();
 
-            Size = new Size(AsteroidImage.Width, AsteroidImage.Height);
+            Size = new Size(EnergyPackImage.Width, EnergyPackImage.Height);
+
+            Timer Timer = new Timer { Interval = EnergyRefreshInterval };
+            Timer.Tick += (object sender, EventArgs e) => InitNewSpaceObject();
+            Timer.Start();
         }
 
         protected abstract Point GetMoveDirection();
-        protected abstract Image GetAsteroidImage();
-        protected abstract int GetAsteroidMaxHealth();
-
-        public override void Draw()
-        {
-            if (Destroyed)
-            {
-                return;
-            }
-
-            Game.Buffer.Graphics.FillEllipse(Brushes.White, BodyShape);
-            Game.Buffer.Graphics.DrawImage(AsteroidImage, new Point(LeftTopPosition.X, LeftTopPosition.Y));
-        }
+        protected abstract Image GetEnergyPackImage();
 
         public override bool IsCollidedWithObject(IColliding obj)
         {
-            if (
-                (!(obj is Bullet) && !(obj is SpaceShip))
-                || Destroyed
-                || CollisionsList.Contains(obj))
+            if (!(obj is SpaceShip) || Destroyed || CollisionsList.Contains(obj))
             {
                 return false;
             }
@@ -69,28 +60,32 @@ namespace Asteroids.SpaceObjects
 
             obj.OnCollideWithObject(this);
 
-            Health -= obj.GetPower();
+            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. HP restored: {this.GetPower()}.");
 
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. Damage taken: {obj.GetPower()}. Current Health: {Health}");
+            DestroySpaceObject();
+        }
 
-            if (Health <= 0)
+        public override void Draw()
+        {
+            if (Destroyed)
             {
-                SpaceShip.CalculateScore(this);
-
-                DestroySpaceObject();
+                return;
             }
+
+            Game.Buffer.Graphics.DrawImage(EnergyPackImage, new Point(LeftTopPosition.X, LeftTopPosition.Y));
         }
 
         public override void Update()
         {
             if (Destroyed)
             {
-                InitNewSpaceObject();
+                // InitNewSpaceObject();
+                return;
             }
 
             LeftTopPosition.X -= MoveDirection.X;
 
-            if (LeftTopPosition.X < -Size.Width)
+            if (LeftTopPosition.X < 0)
             {
                 DestroySpaceObject();
             }
@@ -100,7 +95,7 @@ namespace Asteroids.SpaceObjects
         {
             Destroyed = true;
 
-            LeftTopPosition.X = -1000;
+            LeftTopPosition.X = -1100;
 
             CollisionsList.Clear();
         }
@@ -108,8 +103,6 @@ namespace Asteroids.SpaceObjects
         private void InitNewSpaceObject()
         {
             Destroyed = false;
-
-            Health = GetAsteroidMaxHealth();
 
             LeftTopPosition.X = Game.Width + 2 * Size.Width;
 
@@ -119,11 +112,6 @@ namespace Asteroids.SpaceObjects
             {
                 LeftTopPosition.Y -= Game.Height;
             }
-        }
-
-        public override int GetPower()
-        {
-            return Health;
         }
     }
 }

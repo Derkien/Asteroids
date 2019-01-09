@@ -15,6 +15,7 @@ namespace Asteroids
         private const int GameWindowMaxSize = 1000;
 
         //TODO: think about levels and asteroids count
+        private const int MaxSmallEnergyPacksCount = 3;
         private const int MaxBigAsteroidsCount = 3;
         private const int MaxMediumAsteroidsCount = 5;
         private const int MaxSmallAsteroidsCount = 10;
@@ -29,6 +30,7 @@ namespace Asteroids
         private static SpaceShip SpaceShip;
 
         private static readonly Random Random;
+        private static Timer Timer = new Timer();
 
         //Game window dimentions
         public static int Width { get; set; }
@@ -79,7 +81,8 @@ namespace Asteroids
 
         private static void InitFrameUpdateTimer()
         {
-            Timer Timer = new Timer { Interval = 60 };
+            Timer.Interval = 60;
+
             Timer.Tick += TimerTick;
 
             Timer.Start();
@@ -209,18 +212,21 @@ namespace Asteroids
             SpaceObjectList.Add(new Ufo(new Point(Width / 2, 0)));
 
             SpaceShip = new SpaceShip(new Point(0, Height / 2));
+            SpaceShip.MessageDie += Finish;
             SpaceObjectList.Add(SpaceShip);
 
             SpawnAsteroids((Point leftTopPosition) => { return new BigAsteroid(leftTopPosition); }, MaxBigAsteroidsCount);
             SpawnAsteroids((Point leftTopPosition) => { return new MediumAsteroid(leftTopPosition); }, MaxMediumAsteroidsCount);
             SpawnAsteroids((Point leftTopPosition) => { return new SmallAsteroid(leftTopPosition); }, MaxSmallAsteroidsCount);
+
+            SmallEnergyPack SmallEnergyPack = new SmallEnergyPack(new Point(Width, Random.Next(0, Height)));
+            SpaceObjectList.Add(SmallEnergyPack);
         }
 
         private static void SpawnAsteroids(Func<Point, Asteroid> createAsteroid, int MaxCount)
         {
             for (var i = 0; i < MaxCount; i++)
             {
-                int r = Random.Next(5, 50);
                 AsteroidList.Add(createAsteroid(new Point(Width, Random.Next(0, Height))));
             }
 
@@ -275,6 +281,13 @@ namespace Asteroids
             ProcessGameControls();
             Draw();
             Update();
+        }
+
+        public static void Finish()
+        {
+            Timer.Stop();
+            Buffer.Graphics.DrawString("The End", new Font(FontFamily.GenericSansSerif, 60, FontStyle.Underline), Brushes.White, 200, 100);
+            Buffer.Render();
         }
     }
 }
