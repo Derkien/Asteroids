@@ -1,10 +1,15 @@
-﻿using Asteroids.Exceptions;
+﻿using System.Collections.Generic;
 using System.Drawing;
 
 namespace Asteroids.SpaceObjects
 {
     internal abstract class SpaceObject : IColliding
     {
+        public delegate void Message();
+
+        protected List<IColliding> CollisionsList;
+        protected bool Destroyed = false;
+
         protected Point LeftTopPosition;
         protected Point MoveDirection;
         protected Size Size;
@@ -12,6 +17,8 @@ namespace Asteroids.SpaceObjects
 
         protected SpaceObject(Point leftTopPosition)
         {
+            CollisionsList = new List<IColliding>();
+
             LeftTopPosition = leftTopPosition;
         }
 
@@ -41,11 +48,12 @@ namespace Asteroids.SpaceObjects
         /// </summary>
         public abstract void Update();
 
-        public int GetHealth() {
+        public int GetHealth()
+        {
             return Health;
         }
 
-        public virtual int GetDamage()
+        public virtual int GetPower()
         {
             return 0;
         }

@@ -25,9 +25,9 @@ namespace Asteroids.SpaceObjects
         void OnCollideWithObject(IColliding obj);
 
         /// <summary>
-        /// Amount of damage given by collided object
+        /// Amount of damage/health given by collided object
         /// </summary>
         /// <returns></returns>
-        int GetDamage();
+        int GetPower();
     }
 }

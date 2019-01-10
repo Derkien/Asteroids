@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 
 namespace Asteroids.SpaceObjects
 {
     internal class Bullet : SpaceObject, IDisposable
     {
-        private List<IColliding> CollisionsList;
-
-        private bool Destroyed;
-
         private Image BulletImage;
 
         private const int BulletXSpeed = 15;
@@ -22,17 +18,14 @@ namespace Asteroids.SpaceObjects
             BulletImage = Properties.Resources.SmallPlasmaBullet;
 
             Size = new Size(BulletImage.Width, BulletImage.Height);
-
-            Destroyed = false;
-
-            CollisionsList = new List<IColliding>();
         }
 
         public void Dispose()
         {
-            Destroyed = true;
             BulletImage.Dispose();
             GC.SuppressFinalize(this);
+
+            Debug.WriteLine($"Object: {this.GetHashCode()}. Bullet destroyed and disposed!");
         }
 
         public override void Draw()
@@ -69,11 +62,12 @@ namespace Asteroids.SpaceObjects
 
             obj.OnCollideWithObject(this);
 
+            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. Damage done: {this.GetPower()}.");
+
             DestroySpaceObject();
-            Dispose();
         }
 
-        public override int GetDamage()
+        public override int GetPower()
         {
             return BulletDamage;
         }
@@ -87,10 +81,9 @@ namespace Asteroids.SpaceObjects
 
             LeftTopPosition.X += MoveDirection.X;
 
-            if(LeftTopPosition.X > Game.Width)
+            if (LeftTopPosition.X > Game.Width)
             {
                 DestroySpaceObject();
-                Dispose();
             }
         }
 
@@ -98,6 +91,9 @@ namespace Asteroids.SpaceObjects
         {
             Destroyed = true;
             LeftTopPosition.X = -500;
+            CollisionsList.Clear();
+
+            Dispose();
         }
     }
 }

@@ -93,6 +93,16 @@ namespace Asteroids.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap SmallEnergy {
+            get {
+                object obj = ResourceManager.GetObject("SmallEnergy", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap SmallPlasmaBullet {
             get {
                 object obj = ResourceManager.GetObject("SmallPlasmaBullet", resourceCulture);
