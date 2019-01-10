@@ -45,16 +45,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exceptions\InvalidSpaceObjectException.cs" />
+    <Compile Include="Exceptions\OutOfAmmoException.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="SpaceObjects\BaseObject.cs" />
+    <Compile Include="SpaceObjects\Asteroid.cs" />
+    <Compile Include="SpaceObjects\BigAsteroid.cs" />
+    <Compile Include="SpaceObjects\Bullet.cs" />
+    <Compile Include="SpaceObjects\EnergyPack.cs" />
+    <Compile Include="SpaceObjects\MediumAsteroid.cs" />
+    <Compile Include="SpaceObjects\SmallAsteroid.cs" />
+    <Compile Include="SpaceObjects\SmallEnergyPack.cs" />
+    <Compile Include="SpaceObjects\SpaceObject.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SpaceObjects\CrossStar.cs" />
+    <Compile Include="SpaceObjects\IColliding.cs" />
     <Compile Include="SpaceObjects\PulsingConstellation.cs" />
+    <Compile Include="SpaceObjects\SpaceShip.cs" />
     <Compile Include="SpaceObjects\Ufo.cs" />
     <Compile Include="SpaceObjects\XStar.cs" />
   </ItemGroup>
@@ -66,6 +77,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\VerySmallUfo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallSpaceShip.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallPlasmaBullet.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BigAsteroid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MediumAsteroid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallAsteroid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SmallEnergy.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

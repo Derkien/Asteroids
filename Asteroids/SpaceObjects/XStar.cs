@@ -2,7 +2,7 @@
 
 namespace Asteroids.SpaceObjects
 {
-    internal class XStar : BaseObject
+    internal class XStar : SpaceObject
     {
         public XStar(Point leftTopPosition, Point moveDirection, Size size) : base(leftTopPosition, moveDirection, size)
         {
@@ -12,6 +12,16 @@ namespace Asteroids.SpaceObjects
         {
             Game.Buffer.Graphics.DrawLine(Pens.White, LeftTopPosition.X, LeftTopPosition.Y, LeftTopPosition.X + Size.Width, LeftTopPosition.Y + Size.Height);
             Game.Buffer.Graphics.DrawLine(Pens.White, LeftTopPosition.X + Size.Width, LeftTopPosition.Y, LeftTopPosition.X, LeftTopPosition.Y + Size.Height);
+        }
+
+        public override bool IsCollidedWithObject(IColliding obj)
+        {
+            return false;
+        }
+
+        public override void OnCollideWithObject(IColliding obj)
+        {
+            return;
         }
 
         public override void Update()

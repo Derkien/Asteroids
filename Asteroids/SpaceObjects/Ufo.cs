@@ -2,7 +2,7 @@
 
 namespace Asteroids.SpaceObjects
 {
-    internal class Ufo : BaseObject
+    internal class Ufo : SpaceObject
     {
         private const int AmplitudeX = 50;
         private static bool SwitchDirection;
@@ -14,11 +14,23 @@ namespace Asteroids.SpaceObjects
 
             InitialPosition = LeftTopPosition.X;
             SwitchDirection = false;
+
+            Size = new Size(Properties.Resources.SmallUfo.Width, Properties.Resources.SmallUfo.Height);
         }
 
         public override void Draw()
         {
-            Game.Buffer.Graphics.DrawImage(Asteroids.Properties.Resources.VerySmallUfo, new Point(LeftTopPosition.X, LeftTopPosition.Y));
+            Game.Buffer.Graphics.DrawImage(Properties.Resources.SmallUfo, new Point(LeftTopPosition.X, LeftTopPosition.Y));
+        }
+
+        public override bool IsCollidedWithObject(IColliding obj)
+        {
+            return false;
+        }
+
+        public override void OnCollideWithObject(IColliding obj)
+        {
+            return;
         }
 
         //TODO: move Ufo more unexpected 
