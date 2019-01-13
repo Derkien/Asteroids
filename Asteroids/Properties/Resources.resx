@@ -124,6 +124,9 @@
   <data name="MediumAsteroid" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\MediumAsteroid.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="PlasmaGunLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PlasmaGunLogo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="SmallAsteroid" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\SmallAsteroid.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -138,5 +141,8 @@
   </data>
   <data name="SmallUfo" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\VerySmallUfo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SpaceShipHPLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SpaceShipHPLogo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

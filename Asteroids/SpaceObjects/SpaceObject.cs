@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using Asteroids.Services;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace Asteroids.SpaceObjects
 {
     internal abstract class SpaceObject : IColliding
     {
+        protected ILogger Logger;
+
         public delegate void Message();
 
         protected List<IColliding> CollisionsList;
@@ -20,6 +24,8 @@ namespace Asteroids.SpaceObjects
             CollisionsList = new List<IColliding>();
 
             LeftTopPosition = leftTopPosition;
+
+            Logger = ApplicationLogging.CreateLogger(GetType());
         }
 
         protected SpaceObject(Point leftTopPosition, Point moveDirection) : this(leftTopPosition)
@@ -39,9 +45,42 @@ namespace Asteroids.SpaceObjects
         /// </summary>
         public abstract void Draw();
 
-        public abstract bool IsCollidedWithObject(IColliding obj);
+        public abstract bool IsObjectTypeValidForCollision(IColliding obj);
 
-        public abstract void OnCollideWithObject(IColliding obj);
+        public bool IsCollidedWithObject(IColliding obj)
+        {
+            if (!IsObjectTypeValidForCollision(obj) || Destroyed || CollisionsList.Contains(obj))
+            {
+                return false;
+            }
+
+            return BodyShape.IntersectsWith(obj.BodyShape);
+        }
+
+        public void OnCollideWithObject(IColliding obj)
+        {
+            if (!IsCollidedWithObject(obj))
+            {
+                return;
+            }
+
+            if (!CollisionsList.Contains(obj))
+            {
+                CollisionsList.Add(obj);
+            }
+
+            obj.OnCollideWithObject(this);
+
+            Logger.LogInformation(
+                "Collision of objects registered. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}, " +
+                $"Object2: {obj.GetType()}.{obj.GetHashCode()}"
+            );
+
+            OnAfterCollideRegistered(obj);
+        }
+
+        protected abstract void OnAfterCollideRegistered(IColliding obj);
 
         /// <summary>
         /// Update space object state, e.g. move it

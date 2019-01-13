@@ -7,6 +7,7 @@ namespace Asteroids.SpaceObjects
         private const int AsteroidHealth = 5;
         private const int AsteroidXSpeed = 7;
         private const int AsteroidYSpeed = 25;
+        private const int AsteroidDamage = 5;
 
         public SmallAsteroid(Point leftTopPosition) : base(leftTopPosition)
         {
@@ -25,6 +26,11 @@ namespace Asteroids.SpaceObjects
         protected override Point GetMoveDirection()
         {
             return new Point(AsteroidXSpeed, AsteroidYSpeed);
+        }
+
+        public override int GetPower()
+        {
+            return AsteroidDamage;
         }
     }
 }

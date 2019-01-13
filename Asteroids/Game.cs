@@ -1,8 +1,11 @@
 ﻿using Asteroids.Exceptions;
+using Asteroids.Services;
 using Asteroids.SpaceObjects;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Asteroids
@@ -16,9 +19,9 @@ namespace Asteroids
 
         //TODO: think about levels and asteroids count
         private const int MaxSmallEnergyPacksCount = 3;
-        private const int MaxBigAsteroidsCount = 3;
-        private const int MaxMediumAsteroidsCount = 5;
-        private const int MaxSmallAsteroidsCount = 10;
+        private const int MaxBigAsteroidsCount = 1;
+        private const int MaxMediumAsteroidsCount = 2;
+        private const int MaxSmallAsteroidsCount = 3;
         private const int WindowGridColsCount = 10;
         private const int WindowGridRowsCount = 10;
         private static BufferedGraphicsContext BufferedGraphicsContext;
@@ -31,6 +34,7 @@ namespace Asteroids
 
         private static readonly Random Random;
         private static Timer Timer = new Timer();
+        private static ILogger Logger = ApplicationLogging.CreateLogger<Game>();
 
         //Game window dimentions
         public static int Width { get; set; }
@@ -42,6 +46,11 @@ namespace Asteroids
         private static bool ControlIsPressedMoveUp = false;
         private static bool ControlIsPressedMoveDown = false;
         private static bool ControlIsPressedFire = false;
+
+        private static bool GameOnPause = false;
+
+        private static int AsteroidsCountIncrement = 0;
+        public static int AsteroidsLeft = 0;
 
         static Game()
         {
@@ -112,6 +121,21 @@ namespace Asteroids
                 {
                     ControlIsPressedMoveDown = true;
                 }
+                if (e.KeyCode == Keys.P)
+                {
+                    if (GameOnPause)
+                    {
+                        GameOnPause = false;
+                        Timer.Start();
+
+                    }
+                    else
+                    {
+                        GameOnPause = true;
+                        WriteGameMessage("Paused... press P for continue");
+                        Timer.Stop();
+                    }
+                }
             };
             form.KeyUp += (object sender, KeyEventArgs e) =>
             {
@@ -148,11 +172,10 @@ namespace Asteroids
                     BulletList.Add(Bullet);
                     SpaceObjectList.Add(Bullet);
                 }
-                catch (OutOfAmmoException)
+                catch (OutOfAmmoException exception)
                 {
                     // do nothing
-
-                    //TODO: add events logging
+                    Logger.LogWarning(exception, exception.Message);
                 }
             }
             if (ControlIsPressedMoveLeft)
@@ -179,16 +202,16 @@ namespace Asteroids
         public static void Draw()
         {
             Buffer.Graphics.Clear(Color.Black);
-            foreach (SpaceObject spaceObject in SpaceObjectList)
+            foreach (SpaceObject spaceObject in SpaceObjectList.ToArray())
             {
                 spaceObject.Draw();
             }
 
-            foreach (SpaceObject spaceObject in SpaceObjectList)
+            foreach (SpaceObject spaceObject in SpaceObjectList.ToArray())
             {
                 if (spaceObject is IColliding)
                 {
-                    foreach (SpaceObject anotherSpaceObject in SpaceObjectList)
+                    foreach (SpaceObject anotherSpaceObject in SpaceObjectList.ToArray())
                     {
                         if (
                             anotherSpaceObject is IColliding
@@ -215,19 +238,30 @@ namespace Asteroids
             SpaceShip.MessageDie += Finish;
             SpaceObjectList.Add(SpaceShip);
 
-            SpawnAsteroids((Point leftTopPosition) => { return new BigAsteroid(leftTopPosition); }, MaxBigAsteroidsCount);
-            SpawnAsteroids((Point leftTopPosition) => { return new MediumAsteroid(leftTopPosition); }, MaxMediumAsteroidsCount);
-            SpawnAsteroids((Point leftTopPosition) => { return new SmallAsteroid(leftTopPosition); }, MaxSmallAsteroidsCount);
+            SpawnAsteroids(MaxBigAsteroidsCount, MaxMediumAsteroidsCount, MaxSmallAsteroidsCount);
 
             SmallEnergyPack SmallEnergyPack = new SmallEnergyPack(new Point(Width, Random.Next(0, Height)));
             SpaceObjectList.Add(SmallEnergyPack);
+        }
+
+        private static void SpawnAsteroids(int maxBigAsteroidsCount, int maxMediumAsteroidsCount, int maxSmallAsteroidsCount)
+        {
+            SpawnAsteroids((Point leftTopPosition) => { return new BigAsteroid(leftTopPosition); }, maxBigAsteroidsCount);
+            SpawnAsteroids((Point leftTopPosition) => { return new MediumAsteroid(leftTopPosition); }, maxMediumAsteroidsCount);
+            SpawnAsteroids((Point leftTopPosition) => { return new SmallAsteroid(leftTopPosition); }, maxSmallAsteroidsCount);
+
+            AsteroidsLeft = AsteroidList.Count;
         }
 
         private static void SpawnAsteroids(Func<Point, Asteroid> createAsteroid, int MaxCount)
         {
             for (var i = 0; i < MaxCount; i++)
             {
-                AsteroidList.Add(createAsteroid(new Point(Width, Random.Next(0, Height))));
+                var asteroid = createAsteroid(new Point(Width, Random.Next(0, Height)));
+                asteroid.AsteroidDestructionEvent += AsteroidIsDestroyed;
+                asteroid.AsteroidDestructionEvent += SpaceShip.CalculateScore;
+
+                AsteroidList.Add(asteroid);
             }
 
             foreach (var asteroid in AsteroidList)
@@ -283,10 +317,38 @@ namespace Asteroids
             Update();
         }
 
+        /// <summary>
+        /// Finish game logic
+        /// </summary>
         public static void Finish()
         {
             Timer.Stop();
-            Buffer.Graphics.DrawString("The End", new Font(FontFamily.GenericSansSerif, 60, FontStyle.Underline), Brushes.White, 200, 100);
+            WriteGameMessage("Ship destroyed!!! The End...");
+        }
+
+        public async static void AsteroidIsDestroyed(Asteroid asteroid)
+        {
+            AsteroidList.Remove(asteroid);
+            SpaceObjectList.Remove(asteroid);
+            AsteroidsLeft--;
+
+            if (AsteroidList.Count == 0)
+            {
+                AsteroidsCountIncrement++;
+                
+                WriteGameMessage("Get ready for next wave!");
+                Timer.Stop();
+                await Task.Delay(5000);
+                Timer.Start();
+                SpawnAsteroids(MaxBigAsteroidsCount + AsteroidsCountIncrement, MaxMediumAsteroidsCount + AsteroidsCountIncrement, MaxSmallAsteroidsCount + AsteroidsCountIncrement);
+            }
+        }
+
+        private static void WriteGameMessage(string message)
+        {
+            Font Font = new Font(FontFamily.GenericSansSerif, 30, FontStyle.Underline);
+            SizeF MessageSize = Buffer.Graphics.MeasureString(message, Font);
+            Buffer.Graphics.DrawString(message, Font, Brushes.White, (Width - MessageSize.Width) / 2, Height / 2);
             Buffer.Render();
         }
     }

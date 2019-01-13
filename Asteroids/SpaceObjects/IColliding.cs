@@ -10,6 +10,13 @@ namespace Asteroids.SpaceObjects
         Rectangle BodyShape { get; }
 
         /// <summary>
+        /// Detect if object type suitable for collision with current object
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        bool IsObjectTypeValidForCollision(IColliding obj);
+
+        /// <summary>
         /// Detect is current object collide with given
         /// </summary>
         /// <param name="obj"></param>

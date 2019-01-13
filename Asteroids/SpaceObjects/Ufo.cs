@@ -23,12 +23,12 @@ namespace Asteroids.SpaceObjects
             Game.Buffer.Graphics.DrawImage(Properties.Resources.SmallUfo, new Point(LeftTopPosition.X, LeftTopPosition.Y));
         }
 
-        public override bool IsCollidedWithObject(IColliding obj)
+        public override bool IsObjectTypeValidForCollision(IColliding obj)
         {
             return false;
         }
 
-        public override void OnCollideWithObject(IColliding obj)
+        protected override void OnAfterCollideRegistered(IColliding obj)
         {
             return;
         }
