@@ -1,6 +1,6 @@
 ﻿using Asteroids.Exceptions;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -35,32 +35,18 @@ namespace Asteroids.SpaceObjects
         protected abstract Point GetMoveDirection();
         protected abstract Image GetEnergyPackImage();
 
-        public override bool IsCollidedWithObject(IColliding obj)
+        public override bool IsObjectTypeValidForCollision(IColliding obj)
         {
-            if (!(obj is SpaceShip) || Destroyed || CollisionsList.Contains(obj))
-            {
-                return false;
-            }
-
-            return BodyShape.IntersectsWith(obj.BodyShape);
+            return (obj is SpaceShip);
         }
 
-        public override void OnCollideWithObject(IColliding obj)
+        protected override void OnAfterCollideRegistered(IColliding obj)
         {
-            if (!IsCollidedWithObject(obj))
-            {
-                return;
-            }
-
-            //TODO: simplify collision logic
-            if (!CollisionsList.Contains(obj))
-            {
-                CollisionsList.Add(obj);
-            }
-
-            obj.OnCollideWithObject(this);
-
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. HP restored: {this.GetPower()}.");
+            Logger.LogInformation(
+                "After collision registered. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}, " +
+                $"HP restored: {this.GetPower()}"
+                );
 
             DestroySpaceObject();
         }

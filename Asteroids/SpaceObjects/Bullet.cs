@@ -1,5 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Drawing;
 
 namespace Asteroids.SpaceObjects
@@ -24,8 +24,6 @@ namespace Asteroids.SpaceObjects
         {
             BulletImage.Dispose();
             GC.SuppressFinalize(this);
-
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Bullet destroyed and disposed!");
         }
 
         public override void Draw()
@@ -38,31 +36,19 @@ namespace Asteroids.SpaceObjects
             Game.Buffer.Graphics.DrawImage(BulletImage, new Point(LeftTopPosition.X, LeftTopPosition.Y));
         }
 
-        public override bool IsCollidedWithObject(IColliding obj)
+        public override bool IsObjectTypeValidForCollision(IColliding obj)
         {
-            if (!(obj is Asteroid) || Destroyed || CollisionsList.Contains(obj))
-            {
-                return false;
-            }
-
-            return BodyShape.IntersectsWith(obj.BodyShape);
+            return (obj is Asteroid);
         }
 
-        public override void OnCollideWithObject(IColliding obj)
+        protected override void OnAfterCollideRegistered(IColliding obj)
         {
-            if (!IsCollidedWithObject(obj))
-            {
-                return;
-            }
+            Logger.LogInformation(
+                "After collision registered. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}, " +
+                $"Damage done: {this.GetPower()}"
+            );
 
-            if (!CollisionsList.Contains(obj))
-            {
-                CollisionsList.Add(obj);
-            }
-
-            obj.OnCollideWithObject(this);
-
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. Damage done: {this.GetPower()}.");
 
             DestroySpaceObject();
         }

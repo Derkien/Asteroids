@@ -1,6 +1,6 @@
 ﻿using Asteroids.Exceptions;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,10 +9,10 @@ namespace Asteroids.SpaceObjects
     internal class SpaceShip : SpaceObject
     {
         private const int SpaceShipHealth = 100;
-        private const int BaseGunAmmoLimit = 10;
+        private const int BaseGunAmmoLimit = 15;
         private const int BaseGunAmmoRefreshInterval = 500;
         private const int ShipImpactDamage = 100;
-        private const int SpaceShipSpeed = 5;
+        private const int SpaceShipSpeed = 10;
 
         private static int SmallAsteroidsKilled = 0;
         private static int MediumAsteroidsKilled = 0;
@@ -26,6 +26,10 @@ namespace Asteroids.SpaceObjects
 
         private static int BulletsLimitCount;
 
+        protected Image SpaceShipImage;
+        protected Image SpaceShipHPLogoImage;
+        protected Image SpaceShipGunImage;
+
         public SpaceShip(Point leftTopPosition) : base(leftTopPosition)
         {
             if (LeftTopPosition.X < 0 || LeftTopPosition.Y < 0 || LeftTopPosition.X > Game.Width || LeftTopPosition.Y > Game.Height)
@@ -35,7 +39,11 @@ namespace Asteroids.SpaceObjects
 
             MoveDirection = new Point(SpaceShipSpeed, SpaceShipSpeed);
 
-            Size = new Size(Properties.Resources.SmallSpaceShip.Width, Properties.Resources.SmallSpaceShip.Height);
+            SpaceShipImage = Properties.Resources.SmallSpaceShip;
+            SpaceShipHPLogoImage = Properties.Resources.SpaceShipHPLogo;
+            SpaceShipGunImage = Properties.Resources.PlasmaGunLogo;
+
+            Size = new Size(SpaceShipImage.Width, SpaceShipImage.Height);
 
             BulletsLimitCount = BaseGunAmmoLimit;
             Health = SpaceShipHealth;
@@ -47,72 +55,83 @@ namespace Asteroids.SpaceObjects
 
         public override void Draw()
         {
-            Game.Buffer.Graphics.DrawImage(Properties.Resources.SmallSpaceShip, new Point(LeftTopPosition.X, LeftTopPosition.Y));
+            Game.Buffer.Graphics.DrawImage(SpaceShipImage, new Point(LeftTopPosition.X, LeftTopPosition.Y));
 
-            Rectangle LifeBarBorder = new Rectangle(5, 5, SpaceShipHealth + 2, 17);
-            Game.Buffer.Graphics.DrawRectangle(new Pen(Color.OrangeRed, 17), LifeBarBorder);
+            int MarginSize = 4;
 
-            Game.Buffer.Graphics.DrawRectangle(new Pen(Color.Aquamarine, 15), 6, 6, Health > SpaceShipHealth ? SpaceShipHealth : Health, 15);
+            Font Font = new Font("Arial", 10, FontStyle.Bold);
+            string KillBoardMessage = $"Killboard: {SmallAsteroidsKilled}s;{MediumAsteroidsKilled}m;{BigAsteroidsKilled}b | Reward: {RewardTotal}$ | Asteroids left: {Game.AsteroidsLeft}";
+            SizeF KillBoardMessageSize = Game.Buffer.Graphics.MeasureString(KillBoardMessage, Font);
+            Game.Buffer.Graphics.DrawString(
+                KillBoardMessage,
+                Font,
+                new SolidBrush(Color.Aquamarine),
+                MarginSize,
+                MarginSize
+            );
+
+            Rectangle LifeBarBorder = new Rectangle(MarginSize + SpaceShipHPLogoImage.Width, MarginSize + (int)KillBoardMessageSize.Height, SpaceShipHealth, SpaceShipHPLogoImage.Height);
+            Game.Buffer.Graphics.DrawImage(SpaceShipHPLogoImage, MarginSize, LifeBarBorder.Y);
+            Game.Buffer.Graphics.FillRectangle(new SolidBrush(Color.Red), LifeBarBorder);
+            Rectangle LifeBar = new Rectangle(LifeBarBorder.X, LifeBarBorder.Y, Health > SpaceShipHealth ? SpaceShipHealth : Health, LifeBarBorder.Height);
+            Game.Buffer.Graphics.FillRectangle(new SolidBrush(Color.LightGreen), LifeBar);
+
+            Rectangle AmmoBarBorder = new Rectangle(MarginSize + SpaceShipGunImage.Width, MarginSize * 2 + (int)KillBoardMessageSize.Height + SpaceShipGunImage.Height, BaseGunAmmoLimit, SpaceShipGunImage.Height);
+            Game.Buffer.Graphics.DrawImage(SpaceShipGunImage, MarginSize, AmmoBarBorder.Y);
+            Game.Buffer.Graphics.FillRectangle(new SolidBrush(Color.Red), AmmoBarBorder);
+            Rectangle AmmoBar = new Rectangle(AmmoBarBorder.X, AmmoBarBorder.Y, BulletsLimitCount, AmmoBarBorder.Height);
+            Game.Buffer.Graphics.FillRectangle(new SolidBrush(Color.LightGreen), AmmoBar);
 
             string HealthText = $"{Health}%";
-            Font Font = new Font("Arial", 10, FontStyle.Bold);
-
-            SizeF size = Game.Buffer.Graphics.MeasureString(HealthText, Font);
-
-            Game.Buffer.Graphics.DrawString(HealthText, Font, new SolidBrush(Color.Black), (LifeBarBorder.Width / 2) - (size.Width / 2) + 5, LifeBarBorder.Height / 2);
-
-            Game.Buffer.Graphics.DrawString($"Killboard: {SmallAsteroidsKilled}s;{MediumAsteroidsKilled}m;{BigAsteroidsKilled}b | Reward: {RewardTotal}$", Font, new SolidBrush(Color.Aquamarine), LifeBarBorder.Width + 15, LifeBarBorder.Height / 2);
+            SizeF HealthTextSize = Game.Buffer.Graphics.MeasureString(HealthText, Font);
+            Game.Buffer.Graphics.DrawString(
+                HealthText,
+                Font,
+                new SolidBrush(Color.Black),
+                (LifeBarBorder.Width / 2) - (HealthTextSize.Width / 2) + LifeBarBorder.X,
+                LifeBarBorder.Y
+            );
         }
 
-        public override bool IsCollidedWithObject(IColliding obj)
+        public override bool IsObjectTypeValidForCollision(IColliding obj)
         {
-            if ((!(obj is Asteroid) && !(obj is EnergyPack)) || CollisionsList.Contains(obj))
-            {
-                return false;
-            }
-
-            return BodyShape.IntersectsWith(obj.BodyShape);
+            return (obj is Asteroid) || (obj is EnergyPack);
         }
 
-        public override void OnCollideWithObject(IColliding obj)
+        protected override void OnAfterCollideRegistered(IColliding obj)
         {
-            if (!IsCollidedWithObject(obj))
-            {
-                return;
-            }
-
-            //TODO: simplify collision logic
-            if (!CollisionsList.Contains(obj))
-            {
-                CollisionsList.Add(obj);
-            }
-
             string CollisionResult = "";
             if (obj is EnergyPack)
             {
                 Health += obj.GetPower();
-                CollisionResult = "HP restored";
+                CollisionResult = $"HP restored: {obj.GetPower()}";
             }
             else
             {
                 Health -= obj.GetPower();
-                CollisionResult = "Damage taken";
+                CollisionResult = $"Damage taken: {obj.GetPower()}";
             }
-
-            obj.OnCollideWithObject(this);
 
             if (Health <= 0)
             {
                 DestroySpaceObject();
             }
 
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. {CollisionResult}: {obj.GetPower()}. Current Health: {Health}");
+            Logger.LogInformation(
+                "After collision registered. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}, " +
+                $"{CollisionResult}, " +
+                $"Object1 Health: {Health}"
+            );
 
             CollisionsList.Clear();
         }
 
-        //HARDCODE just for idea, replace for event listening from destroyed asteroid
-        public static void CalculateScore(IColliding obj)
+        /// <summary>
+        /// Subscriber for AsteroidDestructionEvent
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void CalculateScore(Asteroid obj)
         {
             if (obj is SmallAsteroid)
             {
@@ -168,12 +187,22 @@ namespace Asteroids.SpaceObjects
 
         public void MoveHorizontal(int Direction)
         {
-            LeftTopPosition.X += Direction * MoveDirection.X;
+            int NextPosition = LeftTopPosition.X + Direction * MoveDirection.X;
+
+            if (NextPosition >= -BodyShape.Width / 2 && NextPosition <= Game.Width - BodyShape.Width)
+            {
+                LeftTopPosition.X = NextPosition;
+            }
         }
 
         public void MoveVertical(int Direction)
         {
-            LeftTopPosition.Y += Direction * MoveDirection.Y;
+            int NextPosition = LeftTopPosition.Y + Direction * MoveDirection.Y;
+
+            if (NextPosition >= -BodyShape.Height / 2 && NextPosition <= Game.Height - BodyShape.Height / 2)
+            {
+                LeftTopPosition.Y = NextPosition;
+            }
         }
 
         private void DestroySpaceObject()

@@ -1,14 +1,16 @@
 ﻿using Asteroids.Exceptions;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 
 namespace Asteroids.SpaceObjects
 {
-    internal abstract class Asteroid : SpaceObject
+    internal abstract class Asteroid : SpaceObject, IDisposable
     {
         protected Image AsteroidImage;
         protected Random Random;
+
+        public delegate void AsteroidDestruction(Asteroid asteroid);
 
         public Asteroid(Point leftTopPosition) : base(leftTopPosition)
         {
@@ -26,6 +28,12 @@ namespace Asteroids.SpaceObjects
             Size = new Size(AsteroidImage.Width, AsteroidImage.Height);
         }
 
+        public void Dispose()
+        {
+            AsteroidImage.Dispose();
+            GC.SuppressFinalize(this);
+        }
+
         protected abstract Point GetMoveDirection();
         protected abstract Image GetAsteroidImage();
         protected abstract int GetAsteroidMaxHealth();
@@ -41,42 +49,24 @@ namespace Asteroids.SpaceObjects
             Game.Buffer.Graphics.DrawImage(AsteroidImage, new Point(LeftTopPosition.X, LeftTopPosition.Y));
         }
 
-        public override bool IsCollidedWithObject(IColliding obj)
+        public override bool IsObjectTypeValidForCollision(IColliding obj)
         {
-            if (
-                (!(obj is Bullet) && !(obj is SpaceShip))
-                || Destroyed
-                || CollisionsList.Contains(obj))
-            {
-                return false;
-            }
-
-            return BodyShape.IntersectsWith(obj.BodyShape);
+            return (obj is Bullet) || (obj is SpaceShip);
         }
 
-        public override void OnCollideWithObject(IColliding obj)
+        protected override void OnAfterCollideRegistered(IColliding obj)
         {
-            if (!IsCollidedWithObject(obj))
-            {
-                return;
-            }
-
-            //TODO: simplify collision logic
-            if (!CollisionsList.Contains(obj))
-            {
-                CollisionsList.Add(obj);
-            }
-
-            obj.OnCollideWithObject(this);
-
             Health -= obj.GetPower();
 
-            Debug.WriteLine($"Object: {this.GetHashCode()}. Collision detected! Source: {this.GetType()}. Target: {obj.GetType()}. Damage taken: {obj.GetPower()}. Current Health: {Health}");
+            Logger.LogInformation(
+                "After collision registered. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}, " +
+                $"Damage taken: {obj.GetPower()}, " +
+                $"Object1 Health: {Health}"
+            );
 
             if (Health <= 0)
             {
-                SpaceShip.CalculateScore(this);
-
                 DestroySpaceObject();
             }
         }
@@ -85,14 +75,14 @@ namespace Asteroids.SpaceObjects
         {
             if (Destroyed)
             {
-                InitNewSpaceObject();
+                return;
             }
 
             LeftTopPosition.X -= MoveDirection.X;
 
             if (LeftTopPosition.X < -Size.Width)
             {
-                DestroySpaceObject();
+                RenewSpaceObject();
             }
         }
 
@@ -103,12 +93,19 @@ namespace Asteroids.SpaceObjects
             LeftTopPosition.X = -1000;
 
             CollisionsList.Clear();
+
+            Dispose();
+
+            AsteroidDestructionEvent?.Invoke(this);
+
+            Logger.LogInformation(
+                "Asteroid is desroyed. " +
+                $"Object1: {this.GetType()}.{this.GetHashCode()}"
+            );
         }
 
-        private void InitNewSpaceObject()
+        private void RenewSpaceObject()
         {
-            Destroyed = false;
-
             Health = GetAsteroidMaxHealth();
 
             LeftTopPosition.X = Game.Width + 2 * Size.Width;
@@ -117,13 +114,15 @@ namespace Asteroids.SpaceObjects
 
             if (LeftTopPosition.Y > Game.Height)
             {
-                LeftTopPosition.Y -= Game.Height;
+                LeftTopPosition.Y -= Game.Height / Random.Next(2, 4);
+            }
+
+            if (LeftTopPosition.Y < 0)
+            {
+                LeftTopPosition.Y += Game.Height / Random.Next(2, 4);
             }
         }
 
-        public override int GetPower()
-        {
-            return Health;
-        }
+        public event AsteroidDestruction AsteroidDestructionEvent;
     }
 }
