@@ -131,12 +131,14 @@
   <ItemGroup>
     <Compile Include="Exceptions\InvalidSpaceObjectException.cs" />
     <Compile Include="Exceptions\OutOfAmmoException.cs" />
+    <Compile Include="PlayerControlls.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Services\Logger.cs" />
+    <Compile Include="SpaceObjectSpawner.cs" />
     <Compile Include="SpaceObjects\Asteroid.cs" />
     <Compile Include="SpaceObjects\BigAsteroid.cs" />
     <Compile Include="SpaceObjects\Bullet.cs" />

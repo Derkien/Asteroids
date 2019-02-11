@@ -7,12 +7,11 @@ namespace Asteroids.SpaceObjects
 {
     internal abstract class SpaceObject : IColliding
     {
-        protected ILogger Logger;
-
         public delegate void Message();
+        public bool Destroyed { get; protected set; } = false;
 
+        protected ILogger Logger;
         protected List<IColliding> CollisionsList;
-        protected bool Destroyed = false;
 
         protected Point LeftTopPosition;
         protected Point MoveDirection;

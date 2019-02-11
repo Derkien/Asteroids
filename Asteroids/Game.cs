@@ -1,10 +1,8 @@
-﻿using Asteroids.Exceptions;
-using Asteroids.Services;
-using Asteroids.SpaceObjects;
-using Microsoft.Extensions.Logging;
+﻿using Asteroids.SpaceObjects;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -18,61 +16,48 @@ namespace Asteroids
         private const int GameWindowMaxSize = 1000;
 
         //TODO: think about levels and asteroids count
-        private const int MaxSmallEnergyPacksCount = 3;
-        private const int MaxBigAsteroidsCount = 1;
-        private const int MaxMediumAsteroidsCount = 2;
-        private const int MaxSmallAsteroidsCount = 3;
-        private const int WindowGridColsCount = 10;
-        private const int WindowGridRowsCount = 10;
         private static BufferedGraphicsContext BufferedGraphicsContext;
         public static BufferedGraphics Buffer;
 
         private static List<SpaceObject> SpaceObjectList;
-        private static List<Asteroid> AsteroidList;
-        private static List<Bullet> BulletList;
         private static SpaceShip SpaceShip;
+        private static Ufo Ufo;
+        private static PlayerControlls PlayerControlls;
+        private static SpaceObjectSpawner SpaceObjectSpawner;
 
         private static readonly Random Random;
         private static Timer Timer = new Timer();
-        private static ILogger Logger = ApplicationLogging.CreateLogger<Game>();
 
         //Game window dimentions
         public static int Width { get; set; }
         public static int Height { get; set; }
 
-        //Game controls state
-        private static bool ControlIsPressedMoveLeft = false;
-        private static bool ControlIsPressedMoveRight = false;
-        private static bool ControlIsPressedMoveUp = false;
-        private static bool ControlIsPressedMoveDown = false;
-        private static bool ControlIsPressedFire = false;
-
-        private static bool GameOnPause = false;
-
-        private static int AsteroidsCountIncrement = 0;
         public static int AsteroidsLeft = 0;
 
         static Game()
         {
             Random = new Random();
             SpaceObjectList = new List<SpaceObject>();
-            AsteroidList = new List<Asteroid>();
-            BulletList = new List<Bullet>();
         }
 
         public static void Init(Form form)
         {
             Width = form.ClientSize.Width;
             Height = form.ClientSize.Height;
+
+            PlayerControlls = new PlayerControlls();
+            SpaceObjectSpawner = new SpaceObjectSpawner(Width, Height);
+
             ValidateGameWindowSize(Width, Height);
 
-            LoadSpaceObjects();
+            SpawnSpaceObjects();
 
             BufferedGraphicsContext = BufferedGraphicsManager.Current;
             Buffer = BufferedGraphicsContext.Allocate(form.CreateGraphics(), new Rectangle(0, 0, Width, Height));
 
             InitFrameUpdateTimer();
-            InitKeyListeners(form);
+
+            PlayerControlls.InitGameControlls(form);
         }
 
         private static void ValidateGameWindowSize(int width, int height)
@@ -97,107 +82,19 @@ namespace Asteroids
             Timer.Start();
         }
 
-        private static void InitKeyListeners(Form form)
-        {
-            form.KeyDown += (object sender, KeyEventArgs e) =>
-            {
-                if (e.KeyCode == Keys.Space)
-                {
-                    ControlIsPressedFire = true;
-                }
-                if (e.KeyCode == Keys.Left)
-                {
-                    ControlIsPressedMoveLeft = true;
-                }
-                if (e.KeyCode == Keys.Right)
-                {
-                    ControlIsPressedMoveRight = true;
-                }
-                if (e.KeyCode == Keys.Up)
-                {
-                    ControlIsPressedMoveUp = true;
-                }
-                if (e.KeyCode == Keys.Down)
-                {
-                    ControlIsPressedMoveDown = true;
-                }
-                if (e.KeyCode == Keys.P)
-                {
-                    if (GameOnPause)
-                    {
-                        GameOnPause = false;
-                        Timer.Start();
-
-                    }
-                    else
-                    {
-                        GameOnPause = true;
-                        WriteGameMessage("Paused... press P for continue");
-                        Timer.Stop();
-                    }
-                }
-            };
-            form.KeyUp += (object sender, KeyEventArgs e) =>
-            {
-                if (e.KeyCode == Keys.Space)
-                {
-                    ControlIsPressedFire = false;
-                }
-                if (e.KeyCode == Keys.Left)
-                {
-                    ControlIsPressedMoveLeft = false;
-                }
-                if (e.KeyCode == Keys.Right)
-                {
-                    ControlIsPressedMoveRight = false;
-                }
-                if (e.KeyCode == Keys.Up)
-                {
-                    ControlIsPressedMoveUp = false;
-                }
-                if (e.KeyCode == Keys.Down)
-                {
-                    ControlIsPressedMoveDown = false;
-                }
-            };
-        }
 
         private static void ProcessGameControls()
         {
-            if (ControlIsPressedFire)
+            var Bullet = PlayerControlls.ProcessGameControls(SpaceShip);
+
+            if (Bullet != null)
             {
-                try
-                {
-                    Bullet Bullet = SpaceShip.Shoot();
-                    BulletList.Add(Bullet);
-                    SpaceObjectList.Add(Bullet);
-                }
-                catch (OutOfAmmoException exception)
-                {
-                    // do nothing
-                    Logger.LogWarning(exception, exception.Message);
-                }
-            }
-            if (ControlIsPressedMoveLeft)
-            {
-                SpaceShip.MoveHorizontal(-1);
-            }
-            if (ControlIsPressedMoveRight)
-            {
-                SpaceShip.MoveHorizontal(1);
-            }
-            if (ControlIsPressedMoveUp)
-            {
-                SpaceShip.MoveVertical(-1);
-            }
-            if (ControlIsPressedMoveDown)
-            {
-                SpaceShip.MoveVertical(1);
+                SpaceObjectList.Add(Bullet);
             }
         }
 
         /// <summary>
-        /// Draw game objects
+        /// Draw game objects, detect collisions
         /// </summary>
         public static void Draw()
         {
@@ -215,7 +112,7 @@ namespace Asteroids
                     {
                         if (
                             anotherSpaceObject is IColliding
-                            && !object.ReferenceEquals(spaceObject, anotherSpaceObject)
+                            && !ReferenceEquals(spaceObject, anotherSpaceObject)
                             && spaceObject.IsCollidedWithObject(anotherSpaceObject)
                             )
                         {
@@ -227,76 +124,21 @@ namespace Asteroids
             Buffer.Render();
         }
 
-        private static void LoadSpaceObjects()
+        /// <summary>
+        /// Spawn all space objects
+        /// </summary>
+        private static void SpawnSpaceObjects()
         {
-            //TODO: optimize objects spreading
-            LoadBackgroundStars();
+            SpaceObjectSpawner.LoadBackgroundStars(SpaceObjectList);
 
-            SpaceObjectList.Add(new Ufo(new Point(Width / 2, 0)));
+            Ufo = SpaceObjectSpawner.SpawnUfo(SpaceObjectList);
+            SpaceShip = SpaceObjectSpawner.SpawnSpaceShip(SpaceObjectList);
 
-            SpaceShip = new SpaceShip(new Point(0, Height / 2));
-            SpaceShip.MessageDie += Finish;
-            SpaceObjectList.Add(SpaceShip);
+            SpaceObjectSpawner.SpawnLevelAsteroids(SpaceObjectList);
 
-            SpawnAsteroids(MaxBigAsteroidsCount, MaxMediumAsteroidsCount, MaxSmallAsteroidsCount);
+            AsteroidsLeft = SpaceObjectList.Where(s => s is Asteroid).Count();
 
-            SmallEnergyPack SmallEnergyPack = new SmallEnergyPack(new Point(Width, Random.Next(0, Height)));
-            SpaceObjectList.Add(SmallEnergyPack);
-        }
-
-        private static void SpawnAsteroids(int maxBigAsteroidsCount, int maxMediumAsteroidsCount, int maxSmallAsteroidsCount)
-        {
-            SpawnAsteroids((Point leftTopPosition) => { return new BigAsteroid(leftTopPosition); }, maxBigAsteroidsCount);
-            SpawnAsteroids((Point leftTopPosition) => { return new MediumAsteroid(leftTopPosition); }, maxMediumAsteroidsCount);
-            SpawnAsteroids((Point leftTopPosition) => { return new SmallAsteroid(leftTopPosition); }, maxSmallAsteroidsCount);
-
-            AsteroidsLeft = AsteroidList.Count;
-        }
-
-        private static void SpawnAsteroids(Func<Point, Asteroid> createAsteroid, int MaxCount)
-        {
-            for (var i = 0; i < MaxCount; i++)
-            {
-                var asteroid = createAsteroid(new Point(Width, Random.Next(0, Height)));
-                asteroid.AsteroidDestructionEvent += AsteroidIsDestroyed;
-                asteroid.AsteroidDestructionEvent += SpaceShip.CalculateScore;
-
-                AsteroidList.Add(asteroid);
-            }
-
-            foreach (var asteroid in AsteroidList)
-            {
-                SpaceObjectList.Add(asteroid);
-            }
-        }
-
-        private static void LoadBackgroundStars()
-        {
-            for (int startX = 1, i = 1; startX < Width; startX += Width / WindowGridColsCount, i++)
-            {
-                for (int startY = 1, j = 1; startY < Height; startY += Height / WindowGridRowsCount, j++)
-                {
-                    if ((j + i) % 3 == 0)
-                    {
-                        SpaceObjectList.Add(
-                            new PulsingConstellation(
-                                new Point(startX, startY),
-                                new Point(Random.Next(10, 20), Random.Next(5, 15))
-                            )
-                        );
-                    }
-                    else
-                    {
-                        SpaceObjectList.Add(
-                            new XStar(
-                                new Point(startX, startY),
-                                new Point(Random.Next(5, 15), Random.Next(10, 20)),
-                                new Size(3, 3)
-                            )
-                        );
-                    }
-                }
-            }
+            SpaceObjectSpawner.SpawnEnergyPack(SpaceObjectList);
         }
 
         /// <summary>
@@ -304,43 +146,86 @@ namespace Asteroids
         /// </summary>
         private static void Update()
         {
-            foreach (SpaceObject obj in SpaceObjectList)
+            foreach (SpaceObject obj in SpaceObjectList.ToArray())
             {
                 obj.Update();
+
+                if (obj.Destroyed)
+                {
+                    if (obj is Asteroid)
+                    {
+                        SpaceObjectIsDestroyed(obj as Asteroid);
+                    }
+
+                    if (obj is Bullet)
+                    {
+                        SpaceObjectIsDestroyed(obj as Bullet);
+                    }
+                }
             }
         }
 
+        /// <summary>
+        /// Game tick frame timer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private static void TimerTick(object sender, EventArgs e)
         {
+            if (PlayerControlls.IsGameOnPause)
+            {
+                WriteGameMessage("Paused... press P for continue");
+
+                return;
+            }
+
             ProcessGameControls();
+
             Draw();
             Update();
+
+            if (SpaceShip.Destroyed)
+            {
+                EndGame();
+            }
         }
 
         /// <summary>
-        /// Finish game logic
+        /// EndGame game logic
         /// </summary>
-        public static void Finish()
+        public static void EndGame()
         {
             Timer.Stop();
             WriteGameMessage("Ship destroyed!!! The End...");
         }
 
-        public async static void AsteroidIsDestroyed(Asteroid asteroid)
+        /// <summary>
+        /// On destroyed bullet
+        /// </summary>
+        /// <param name="bullet"></param>
+        public static void SpaceObjectIsDestroyed(Bullet bullet) {
+            SpaceObjectList.Remove(bullet);
+        }
+
+        /// <summary>
+        /// On destroyed asteroid
+        /// </summary>
+        /// <param name="asteroid"></param>
+        public static async void SpaceObjectIsDestroyed(Asteroid asteroid)
         {
-            AsteroidList.Remove(asteroid);
             SpaceObjectList.Remove(asteroid);
             AsteroidsLeft--;
 
-            if (AsteroidList.Count == 0)
+            if (SpaceObjectList.Where(s => s is Asteroid).Count() == 0)
             {
-                AsteroidsCountIncrement++;
-                
                 WriteGameMessage("Get ready for next wave!");
                 Timer.Stop();
                 await Task.Delay(5000);
                 Timer.Start();
-                SpawnAsteroids(MaxBigAsteroidsCount + AsteroidsCountIncrement, MaxMediumAsteroidsCount + AsteroidsCountIncrement, MaxSmallAsteroidsCount + AsteroidsCountIncrement);
+
+                SpaceObjectSpawner.SpawnLevelAsteroids(SpaceObjectList);
+
+                AsteroidsLeft = SpaceObjectList.Where(s => s is Asteroid).Count();
             }
         }
 

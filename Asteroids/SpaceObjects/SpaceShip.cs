@@ -26,6 +26,11 @@ namespace Asteroids.SpaceObjects
 
         private static int BulletsLimitCount;
 
+        private int NextPositionX;
+        private int NextPositionY;
+        private bool ShipIsMovedX = false;
+        private bool ShipIsMovedY = false;
+
         protected Image SpaceShipImage;
         protected Image SpaceShipHPLogoImage;
         protected Image SpaceShipGunImage;
@@ -152,7 +157,19 @@ namespace Asteroids.SpaceObjects
 
         public override void Update()
         {
-            return;
+            if (ShipIsMovedX && NextPositionX >= -BodyShape.Width / 2 && NextPositionX <= Game.Width - BodyShape.Width)
+            {
+                LeftTopPosition.X = NextPositionX;
+
+                ShipIsMovedX = false;
+            }
+
+            if (ShipIsMovedY && NextPositionY >= -BodyShape.Height / 2 && NextPositionY <= Game.Height - BodyShape.Height / 2)
+            {
+                LeftTopPosition.Y = NextPositionY;
+
+                ShipIsMovedY = false;
+            }
         }
 
         public bool IsAmmoAvailable()
@@ -187,22 +204,14 @@ namespace Asteroids.SpaceObjects
 
         public void MoveHorizontal(int Direction)
         {
-            int NextPosition = LeftTopPosition.X + Direction * MoveDirection.X;
-
-            if (NextPosition >= -BodyShape.Width / 2 && NextPosition <= Game.Width - BodyShape.Width)
-            {
-                LeftTopPosition.X = NextPosition;
-            }
+            NextPositionX = LeftTopPosition.X + Direction * MoveDirection.X;
+            ShipIsMovedX = true;
         }
 
         public void MoveVertical(int Direction)
         {
-            int NextPosition = LeftTopPosition.Y + Direction * MoveDirection.Y;
-
-            if (NextPosition >= -BodyShape.Height / 2 && NextPosition <= Game.Height - BodyShape.Height / 2)
-            {
-                LeftTopPosition.Y = NextPosition;
-            }
+            NextPositionY = LeftTopPosition.Y + Direction * MoveDirection.Y;
+            ShipIsMovedY = true;
         }
 
         private void DestroySpaceObject()
